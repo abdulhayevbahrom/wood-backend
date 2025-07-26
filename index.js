@@ -18,7 +18,7 @@ app.use(express.json());
 
 // CORS sozlamalari
 const corsOptions = {
-  origin: ["http://localhost:3000"],
+  origin: ["http://localhost:3000", "https://wood-black.vercel.app"],
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
   credentials: true,
 };
