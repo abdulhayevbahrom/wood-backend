@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+
 const AdminSchema = new mongoose.Schema(
   {
     firstName: {
@@ -34,6 +35,16 @@ const AdminSchema = new mongoose.Schema(
     permissions: {
       type: [String],
       default: [],
+    },
+
+    // ✅ Qo‘shimchalar
+    isOffice: {
+      type: Boolean,
+      default: false,
+    },
+    fixedSalary: {
+      type: Number,
+      default: 0,
     },
   },
   { timestamps: true }

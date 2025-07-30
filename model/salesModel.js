@@ -98,6 +98,9 @@ const salesSchema = new mongoose.Schema(
     debtDate: {
       type: Date,
     },
+    description: {
+      type: String,
+    },
   },
   {
     timestamps: true,

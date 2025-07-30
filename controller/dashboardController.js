@@ -104,6 +104,106 @@ class DashboardController {
       response.serverError(res, error, error.message);
     }
   }
+
+  async getMonthlyKubStatistics(req, res) {
+    try {
+      let { from, to } = req.query;
+
+      const start = new Date(from);
+      const end = new Date(new Date(to).getTime() + 86400000); // 1 kun keyin
+      // 1. Sotilgan kunlar uchun totalKub qiymatlarini olish
+      const salesData = await Sales.aggregate([
+        {
+          $match: {
+            createdAt: { $gte: start, $lt: end },
+          },
+        },
+        {
+          $project: {
+            date: {
+              $dateToString: { format: "%Y-%m-%d", date: "$createdAt" },
+            },
+            products: 1,
+          },
+        },
+        { $unwind: "$products" },
+        {
+          $group: {
+            _id: "$date",
+            totalKub: { $sum: "$products.kub" },
+          },
+        },
+      ]);
+
+      // 2. Sana bo‘yicha to‘liq ro‘yxat yaratish (har kun uchun)
+      const dayCount = Math.floor(
+        (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
+      );
+
+      const result = [];
+
+      for (let i = 0; i < dayCount; i++) {
+        const day = new Date(start.getTime() + i * 86400000);
+        const dateStr = day.toISOString().slice(0, 10); // yyyy-mm-dd
+
+        const matched = salesData.find((d) => d._id === dateStr);
+        result.push({
+          date: dateStr,
+          totalKub: matched ? matched.totalKub : 0,
+        });
+      }
+
+      res.json({ success: true, data: result });
+    } catch (err) {
+      console.error("Kub statistikasi xatolik:", err);
+      res.status(500).json({ success: false, message: "Server xatolik" });
+    }
+  }
+
+  async Topclients(req, res) {
+    try {
+      const topClients = await Sales.aggregate([
+        { $unwind: "$products" },
+        {
+          $group: {
+            _id: "$clientId",
+            saleCount: { $sum: 1 },
+            totalKub: { $sum: "$products.kub" },
+          },
+        },
+        {
+          $sort: {
+            saleCount: -1,
+            totalKub: -1,
+          },
+        },
+        { $limit: 10 }, // Faqat top 10 mijoz
+        {
+          $lookup: {
+            from: "clients",
+            localField: "_id",
+            foreignField: "_id",
+            as: "client",
+          },
+        },
+        { $unwind: "$client" },
+        {
+          $project: {
+            _id: 0,
+            clientId: "$_id",
+            name: "$client.name",
+            phone: "$client.phone",
+            saleCount: 1,
+            totalKub: 1,
+          },
+        },
+      ]);
+
+      response.success(res, "Top clients", topClients);
+    } catch (error) {
+      response.serverError(res, error, error.message);
+    }
+  }
 }
 
 module.exports = new DashboardController();

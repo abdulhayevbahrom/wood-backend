@@ -35,6 +35,15 @@ const adminValidation = (req, res, next) => {
         },
         uniqueItems: true,
       },
+
+      // ✅ Yangi maydonlar:
+      isOffice: {
+        type: "boolean",
+      },
+      fixedSalary: {
+        type: "number",
+        minimum: 0,
+      },
     },
     required: ["firstName", "lastName", "login", "password"],
     additionalProperties: false,
@@ -56,8 +65,9 @@ const adminValidation = (req, res, next) => {
           "Permissions — takrorlanmagan stringlar ro‘yxati bo‘lishi kerak",
         phone:
           "Telefon raqam 13 ta belgi bo‘lib, +998901234567 formatda bo‘lishi kerak",
+        isOffice: "isOffice faqat true yoki false bo‘lishi kerak",
+        fixedSalary: "fixedSalary musbat raqam bo‘lishi kerak",
       },
-
       additionalProperties: "Ruxsat etilmagan maydon kiritildi",
     },
   };

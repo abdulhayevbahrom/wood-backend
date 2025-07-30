@@ -12,7 +12,7 @@ const productSchema = new Schema({
   thickness: {
     type: Number,
     required: true,
-  }, // Толщина мм
+  }, // Толщина sm
   width: {
     type: Number,
     required: true,
@@ -42,9 +42,8 @@ const productSchema = new Schema({
 const woodSchema = new Schema(
   {
     vagonNumber: {
-      type: Number,
+      type: String,
       required: true,
-      unique: true,
     },
     products: [productSchema],
   },

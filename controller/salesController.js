@@ -2,6 +2,7 @@ const sales = require("../model/salesModel");
 const response = require("../utils/response");
 const moment = require("moment-timezone");
 const Woods = require("../model/woodModel");
+const mongoose = require("mongoose");
 
 class SalesController {
   async createSale(req, res) {
@@ -33,7 +34,7 @@ class SalesController {
 
         // Kubni qayta hisoblash: (sm → m) × (sm → m) × (m) × (dona)
         const unitVolume =
-          (product.thickness / 100) * (product.width / 100) * product.length;
+          (product.thickness / 100) * (product.width / 1000) * product.length;
         product.kub = parseFloat((unitVolume * product.quantity).toFixed(3));
 
         await wood.save();
@@ -214,6 +215,107 @@ class SalesController {
     } catch (err) {
       console.log(err);
       response.serverError(res, err, err.message);
+    }
+  }
+
+  async getDebtorByClientId(req, res) {
+    try {
+      const oneUsd = +req.query.usd;
+      const { clientId } = req.params;
+
+      if (!oneUsd || oneUsd <= 0) {
+        return response.error(res, "USD kursi noto'g'ri kiritilgan");
+      }
+
+      if (!clientId) {
+        return response.error(res, "Client ID yuborilmagan");
+      }
+
+      const salesWithDebt = await sales.aggregate([
+        {
+          $match: {
+            clientId: new mongoose.Types.ObjectId(clientId),
+          },
+        },
+        {
+          $addFields: {
+            paymentInDollar: {
+              $cond: [
+                { $eq: ["$currency", "sum"] },
+                { $divide: ["$paymentAmount", oneUsd] },
+                "$paymentAmount",
+              ],
+            },
+          },
+        },
+        {
+          $match: {
+            $expr: { $lt: ["$paymentInDollar", "$totalPrice"] },
+          },
+        },
+        {
+          $project: {
+            _id: 1,
+            currency: 1,
+            totalPrice: 1,
+            paymentAmount: 1,
+            paymentInDollar: 1,
+            createdAt: 1,
+          },
+        },
+      ]);
+
+      // Qarzni hisoblash
+      const summary = {
+        dollar: 0,
+        sum: 0,
+      };
+
+      for (const sale of salesWithDebt) {
+        const remaining =
+          sale.currency === "sum"
+            ? (sale.totalPrice - sale.paymentInDollar) * oneUsd
+            : sale.totalPrice - sale.paymentInDollar;
+
+        if (sale.currency === "sum") summary.sum += remaining;
+        else summary.dollar += remaining;
+      }
+
+      response.success(res, "Mijoz bo‘yicha qarzdorlik", {
+        clientId,
+        debt: summary,
+        sales: salesWithDebt,
+      });
+    } catch (err) {
+      response.serverError(res, err.message, err);
+    }
+  }
+
+  async updateDebtDate(req, res) {
+    try {
+      const { saleId } = req.params;
+      const { newDate } = req.body;
+
+      if (!saleId || !newDate) {
+        return response.error(res, "saleId va newDate kerak");
+      }
+
+      const sale = await sales.findById(saleId);
+      if (!sale) {
+        return response.notFound(res, "Sotuv topilmadi");
+      }
+
+      sale.debtDate = new Date(newDate);
+
+      await sale.save();
+
+      response.success(res, "Qarz muddati yangilandi", {
+        saleId,
+        newDebtDate: sale.debtDate,
+      });
+    } catch (err) {
+      console.error(err);
+      response.serverError(res, err.message, err);
     }
   }
 }

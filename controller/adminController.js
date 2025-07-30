@@ -30,8 +30,17 @@ class AdminController {
   async createAdmin(req, res) {
     try {
       let io = req.app.get("socket");
-      const { firstName, lastName, login, password, role, permissions, phone } =
-        req.body;
+      const {
+        firstName,
+        lastName,
+        login,
+        password,
+        role,
+        permissions,
+        phone,
+        isOffice,
+        fixedSalary,
+      } = req.body;
 
       // Login takrorlanmasligini tekshirish
       const existingAdmin = await adminsDB.findOne({ login });
@@ -39,15 +48,18 @@ class AdminController {
         return response.error(res, "Bu login allaqachon mavjud");
       }
 
-      // Ruxsatlarni tekshirish (agar kerak bo‘lsa)
-      if (!permissions || permissions.length === 0) {
+      // Ofis hodimi emas bo‘lsa — permissions majburiy
+      if (!isOffice && (!permissions || permissions.length === 0)) {
         return response.error(res, "Ruxsatlar tanlanmagan");
       }
+
+      // Ofis hodimi bo‘lsa — fixedSalary ixtiyoriy, default 0 bo‘lishi mumkin
+      const salaryValue = isOffice ? fixedSalary || 0 : 0;
 
       // Parolni shifrlash
       const hashedPassword = await bcrypt.hash(password, 10);
 
-      // Adminni yaratish va ruxsatlar bilan saqlash
+      // Adminni yaratish va saqlash
       const admin = await adminsDB.create({
         firstName,
         lastName,
@@ -55,20 +67,21 @@ class AdminController {
         role,
         phone,
         password: hashedPassword,
-        permissions, // Ruxsatlarni saqlash
+        permissions: permissions || [], // ofis hodimida bo‘sh bo‘lishi mumkin
+        isOffice: isOffice || false,
+        fixedSalary: salaryValue,
       });
 
-      // Adminni javobga tayyorlash
+      // Parolni javobdan olib tashlash
       const adminData = admin.toJSON();
-      delete adminData.password; // Parolni javobdan olib tashlash
+      delete adminData.password;
 
-      // Yangi admin qo‘shilganda socket orqali xabar yuborish
+      // Socket orqali xabar
       io.emit("new_admin", adminData);
 
-      // Javob yuborish
+      // Javob
       response.created(res, "Admin qo‘shildi", adminData);
     } catch (err) {
-      // Xatolik bo‘lsa server xatosi yuborish
       response.serverError(res, err.message, err);
     }
   }
