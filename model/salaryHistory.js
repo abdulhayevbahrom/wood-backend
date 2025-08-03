@@ -11,14 +11,10 @@ const schema = new mongoose.Schema(
       type: Number,
       required: true,
     },
-    kub: {
-      type: Number,
-      default: 0,
-    },
     type: {
       type: String,
-      enum: ["kub", "fixed", "advance"],
-      default: "kub",
+      enum: ["fixed", "advance"],
+      default: "fixed",
     },
   },
   {

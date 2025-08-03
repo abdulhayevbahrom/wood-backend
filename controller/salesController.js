@@ -32,9 +32,8 @@ class SalesController {
         // Miqdorni kamaytirish
         product.quantity -= item.quantity;
 
-        // Kubni qayta hisoblash: (sm → m) × (sm → m) × (m) × (dona)
         const unitVolume =
-          (product.thickness / 100) * (product.width / 1000) * product.length;
+          (product.thickness / 1000) * (product.width / 1000) * product.length;
         product.kub = parseFloat((unitVolume * product.quantity).toFixed(3));
 
         await wood.save();
@@ -90,6 +89,55 @@ class SalesController {
     }
   }
 
+  // async getDebtors(req, res) {
+  //   try {
+  //     const oneUsd = +req.query.usd;
+  //     if (!oneUsd || oneUsd <= 0) {
+  //       return response.error(res, "USD kursi noto'g'ri kiritilgan");
+  //     }
+
+  //     const debtors = await sales.aggregate([
+  //       {
+  //         $addFields: {
+  //           paymentInDollar: {
+  //             $cond: [
+  //               { $eq: ["$currency", "sum"] },
+  //               { $divide: ["$paymentAmount", oneUsd] },
+  //               "$paymentAmount",
+  //             ],
+  //           },
+  //         },
+  //       },
+  //       {
+  //         $match: {
+  //           $expr: { $lt: ["$paymentInDollar", "$totalPrice"] },
+  //         },
+  //       },
+  //       {
+  //         $sort: { createdAt: -1 },
+  //       },
+  //       {
+  //         $lookup: {
+  //           from: "clients",
+  //           localField: "clientId",
+  //           foreignField: "_id",
+  //           as: "clientId",
+  //         },
+  //       },
+  //       {
+  //         $unwind: {
+  //           path: "$clientId",
+  //           preserveNullAndEmptyArrays: true,
+  //         },
+  //       },
+  //     ]);
+
+  //     response.success(res, "Qarzdorlar ro'yxati", debtors);
+  //   } catch (error) {
+  //     response.serverError(res, error.message, error);
+  //   }
+  // }
+
   async getDebtors(req, res) {
     try {
       const oneUsd = +req.query.usd;
@@ -107,11 +155,25 @@ class SalesController {
                 "$paymentAmount",
               ],
             },
+            debtDifference: {
+              $subtract: [
+                "$totalPrice",
+                {
+                  $cond: [
+                    { $eq: ["$currency", "sum"] },
+                    { $divide: ["$paymentAmount", oneUsd] },
+                    "$paymentAmount",
+                  ],
+                },
+              ],
+            },
           },
         },
         {
           $match: {
-            $expr: { $lt: ["$paymentInDollar", "$totalPrice"] },
+            $expr: {
+              $gt: ["$debtDifference", 1], // Faqat $1 dan katta qarzni olish
+            },
           },
         },
         {
@@ -199,7 +261,7 @@ class SalesController {
 
         // 2) Kubni qayta‐hisoblash
         const unitVolume =
-          (product.thickness / 100) * (product.width / 100) * product.length;
+          (product.thickness / 1000) * (product.width / 1000) * product.length;
         product.kub = parseFloat((unitVolume * product.quantity).toFixed(3));
 
         await wood.save();

@@ -33,7 +33,7 @@ const productSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
-  selling_price: {
+  sellingPrice: {
     type: Number,
     required: true,
   },

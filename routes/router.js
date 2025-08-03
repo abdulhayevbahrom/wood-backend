@@ -15,6 +15,7 @@ router.post("/admin/create", adminValidation, adminController.createAdmin);
 router.put("/admin/update/:id", adminValidation, adminController.updateAdmin);
 router.delete("/admin/delete/:id", adminController.deleteAdmin);
 
+
 const expensesController = require("../controller/expenseController");
 
 router.get("/expenses/all", expensesController.getAllExpenses);

@@ -12,7 +12,7 @@ const productSchema = new Schema({
   thickness: {
     type: Number,
     required: true,
-  }, // Толщина sm
+  }, // Толщина mm
   width: {
     type: Number,
     required: true,
@@ -30,10 +30,6 @@ const productSchema = new Schema({
     required: false,
   }, // Объем м3 (hisoblanadi avtomatik)
   price: {
-    type: Number,
-    required: true,
-  },
-  selling_price: {
     type: Number,
     required: true,
   },

@@ -22,7 +22,6 @@ const woodValidation = (req, res, next) => {
             "length",
             "quantity",
             "price",
-            "selling_price",
           ],
           properties: {
             sort: { type: "number" },
@@ -32,7 +31,7 @@ const woodValidation = (req, res, next) => {
             length: { type: "number", minimum: 0.1 },
             quantity: { type: "number", minimum: 1 },
             price: { type: "number", minimum: 1 },
-            selling_price: { type: "number" },
+            sellingPrice: { type: "number" },
             // kub kiritilmaydi, avtomatik hisoblanadi
           },
           additionalProperties: false,
