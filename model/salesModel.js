@@ -20,7 +20,7 @@ const productSchema = new mongoose.Schema({
   length: {
     type: Number,
     required: true,
-  }, // Длина м
+  },
   quantity: {
     type: Number,
     required: true,
@@ -38,7 +38,7 @@ const productSchema = new mongoose.Schema({
     required: true,
   },
   vagonNumber: {
-    type: Number,
+    type: String,
     required: true,
   },
 });

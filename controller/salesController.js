@@ -380,6 +380,89 @@ class SalesController {
       response.serverError(res, err.message, err);
     }
   }
+
+  async getSoldOutProductReports(req, res) {
+    try {
+      const soldOutProducts = await Woods.aggregate([
+        { $unwind: "$products" },
+        { $match: { "products.quantity": 0 } },
+        {
+          $project: {
+            woodType: "$products.woodType",
+            thickness: "$products.thickness",
+            width: "$products.width",
+            length: "$products.length",
+            stock: "$products.stock",
+            price: "$products.price",
+            vagonNumber: "$vagonNumber",
+            createdAt: "$createdAt", // 🟢 Qo‘shildi
+            kub: "$products.kub",
+          },
+        },
+      ]);
+      const reports = [];
+
+      for (const p of soldOutProducts) {
+        const totalKub =
+          p.kub && p.kub > 0
+            ? p.kub
+            : (p.thickness / 1000) * (p.width / 1000) * p.length * p.stock;
+
+        const totalCost = totalKub * p.price; // $ narx
+
+        const salesData = await sales.aggregate([
+          { $unwind: "$products" },
+          {
+            $match: {
+              "products.woodType": p.woodType,
+              "products.thickness": p.thickness,
+              "products.width": p.width,
+              "products.length": p.length,
+              "products.vagonNumber": p.vagonNumber,
+            },
+          },
+          {
+            $project: {
+              sellingPrice: "$products.sellingPrice", // doim $
+              kub: "$products.kub",
+              totalAmount: {
+                $multiply: ["$products.kub", "$products.sellingPrice"],
+              },
+            },
+          },
+        ]);
+
+        const totalRevenue = salesData.reduce(
+          (sum, s) => sum + s.totalAmount,
+          0
+        );
+        const profit = totalRevenue - totalCost;
+
+        reports.push({
+          createdAt: p.createdAt,
+          woodType: p.woodType,
+          vagonNumber: p.vagonNumber,
+          size: `${p.thickness}×${p.width}×${p.length}`,
+          stock: p.stock,
+          totalKub: totalKub.toFixed(3),
+          unitPrice: p.price,
+          totalCost: totalCost.toFixed(2),
+          sales: salesData.map((s) => ({
+            sellingPrice: s.sellingPrice.toFixed(2),
+            soldKub: s.kub.toFixed(3),
+            totalAmount: s.totalAmount.toFixed(2),
+          })),
+          totalRevenue: totalRevenue.toFixed(2),
+          netProfit: profit.toFixed(2),
+        });
+      }
+
+      return response.success(res, "Sotuv hisoboti ($)", reports);
+    } catch (err) {
+      console.error("Hisobot xatoligi:", err);
+      return response.error(res, "Hisobot chiqarishda xatolik yuz berdi.");
+    }
+  }
 }
 
 module.exports = new SalesController();

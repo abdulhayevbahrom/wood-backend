@@ -25,6 +25,10 @@ const productSchema = new Schema({
     type: Number,
     required: true,
   }, // Кол-во шт
+  stock: {
+    type: Number,
+    required: true,
+  },
   kub: {
     type: Number,
     required: false,

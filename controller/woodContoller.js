@@ -4,7 +4,9 @@ const response = require("../utils/response");
 class WoodController {
   async getWoods(req, res) {
     try {
-      const data = await woods.find();
+      const data = await woods.find({
+        "products.quantity": { $gt: 0 },
+      });
       if (!data.length) return response.notFound(res, "Malumotlar topilmadi");
       response.success(res, "Barcha woods", data);
     } catch (err) {

@@ -2,7 +2,10 @@ const router = require("express").Router();
 
 const dashboardController = require("../controller/dashboardController");
 router.get("/dashboard", dashboardController.getDashboardData);
-router.get("/dashboard/monthly-kub", dashboardController.getMonthlyKubStatistics);
+router.get(
+  "/dashboard/monthly-kub",
+  dashboardController.getMonthlyKubStatistics
+);
 router.get("/dashboard/top-clients", dashboardController.Topclients);
 
 const adminController = require("../controller/adminController");
@@ -14,7 +17,6 @@ router.get("/admin/:id", adminController.getAdminById);
 router.post("/admin/create", adminValidation, adminController.createAdmin);
 router.put("/admin/update/:id", adminValidation, adminController.updateAdmin);
 router.delete("/admin/delete/:id", adminController.deleteAdmin);
-
 
 const expensesController = require("../controller/expenseController");
 
@@ -53,6 +55,7 @@ router.post("/sales/client/:clientId", salesController.getSalesByClientId);
 router.get("/sales/debtors", salesController.getDebtors);
 router.post("/sales/pay-debt", salesController.payDebt);
 router.delete("/sales/return/:saleId", salesController.returnSale);
+router.get("/sales/reports", salesController.getSoldOutProductReports);
 
 // salary history
 
